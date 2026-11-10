@@ -1,0 +1,54 @@
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: petstore-mcp-user
+  namespace: kagent
+spec:
+  description: Petstore tools via agentgateway with user token exchange
+  protocol: STREAMABLE_HTTP
+  url: http://ai-gateway.agentgateway-system.svc.cluster.local:8080/mcp/petstore-user
+  timeout: 30s
+  headersFrom:
+    - name: X-Agent-Authorization
+      valueFrom:
+        type: Secret
+        name: petstore-mcp-key-assistant
+        key: Authorization
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: petstore-assistant-user
+  namespace: kagent
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: petstore-assistant-user
+  namespace: kagent
+spec:
+  type: Declarative
+  description: Petstore assistant that acts with the calling user's identity.
+  declarative:
+    runtime: python
+    modelConfig: via-gateway
+    systemMessage: |
+      You are the Petstore assistant. Use the tools to find pets and place orders with real data.
+      Always call prepare_order first, show pet, quantity, unit price, total and quote_id, and wait for explicit
+      confirmation before calling confirm_order. Orders are always placed for the signed-in user; you cannot
+      order on behalf of anyone else.
+    tools:
+      - type: McpServer
+        mcpServer:
+          apiGroup: kagent.dev
+          kind: RemoteMCPServer
+          name: petstore-mcp-user
+          toolNames: [find_pets_by_status, get_pet, get_inventory, prepare_order, confirm_order]
+          requireApproval: [confirm_order]
+          allowedHeaders: [Authorization]
+    context:
+      compaction:
+        compactionInterval: 5
+        overlapSize: 2
+    deployment:
+      serviceAccountName: petstore-assistant-user

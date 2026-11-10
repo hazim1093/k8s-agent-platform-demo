@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kagent-gateway-dummy-key
+  namespace: kagent
+stringData:
+  # placeholder: kagent requires a key, the gateway holds the real one
+  OPENAI_API_KEY: unused
+---
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: via-gateway
+  namespace: kagent
+spec:
+  provider: OpenAI
+  model: default
+  apiKeySecret: kagent-gateway-dummy-key
+  apiKeySecretKey: OPENAI_API_KEY
+  openAI:
+    baseUrl: http://ai-gateway.agentgateway-system.svc.cluster.local:8080/llm/v1

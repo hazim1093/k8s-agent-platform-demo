@@ -1,0 +1,19 @@
+fullnameOverride: petstore-ops-tools
+rbac:
+  create: false
+tools:
+  loglevel: info
+  metrics:
+    port: 8085
+  enabledTools:
+    - k8s
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

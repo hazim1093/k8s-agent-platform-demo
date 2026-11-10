@@ -1,0 +1,16 @@
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: petstore-mcp
+  namespace: kagent
+spec:
+  description: Petstore tools via agentgateway (identity petstore-assistant)
+  protocol: STREAMABLE_HTTP
+  url: http://ai-gateway.agentgateway-system.svc.cluster.local:8080/mcp/petstore
+  timeout: 30s
+  headersFrom:
+    - name: Authorization
+      valueFrom:
+        type: Secret
+        name: petstore-mcp-key-assistant
+        key: Authorization

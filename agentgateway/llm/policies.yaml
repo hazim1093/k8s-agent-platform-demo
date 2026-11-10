@@ -1,0 +1,44 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: llm-prompt-guard
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+  - group: agentgateway.dev
+    kind: AgentgatewayBackend
+    name: llm
+  backend:
+    ai:
+      promptGuard:
+        request:
+        - regex:
+            action: Mask
+            builtins: [Email, PhoneNumber, CreditCard]
+        response:
+        - regex:
+            action: Mask
+            builtins: [Email, PhoneNumber, CreditCard]
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: llm-rate-limit
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: llm
+  traffic:
+    rateLimit:
+      conditional:
+      - condition: 'request.headers["x-ratelimit-demo"] == "true"'
+        policy:
+          local:
+          - tokens: 50
+            unit: Minutes
+      - policy:
+          local:
+          - tokens: 60000
+            unit: Minutes

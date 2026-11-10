@@ -1,0 +1,62 @@
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: petstore-ops-tools
+  namespace: kagent
+spec:
+  description: Kubernetes tools running as SA petstore-ops-tools (read-only RBAC in namespace petstore only)
+  protocol: STREAMABLE_HTTP
+  url: http://petstore-ops-tools.kagent.svc.cluster.local:8084/mcp
+  timeout: 30s
+---
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: petstore-ops
+  namespace: kagent
+spec:
+  type: Declarative
+  description: Read-only operations assistant for the petstore namespace.
+  declarative:
+    runtime: python
+    modelConfig: via-gateway
+    systemMessage: |
+      You are petstore-ops, an operations assistant for the Kubernetes namespace "petstore".
+
+      Scope:
+      - Only investigate resources in the "petstore" namespace. Always pass namespace "petstore" to tools.
+      - If asked about any other namespace or cluster-wide resources, refuse and explain that you are limited to "petstore".
+
+      Read-only:
+      - Use only read tools (list resources, describe, get YAML, pod logs, events) to investigate.
+      - Never change anything unless the user explicitly asks for a specific change. If they do, use k8s_patch_resource;
+        it requires human approval, and your access may still be denied by RBAC. Report the outcome honestly.
+
+      Answers:
+      - Explain findings clearly: what you checked, what you found (with evidence such as pod status, log lines, events),
+        the likely cause, and the suggested next step.
+      - Say so when you are unsure or a tool returned an error such as "forbidden".
+    tools:
+      - type: McpServer
+        mcpServer:
+          apiGroup: kagent.dev
+          kind: RemoteMCPServer
+          name: petstore-ops-tools
+          toolNames:
+            - k8s_get_resources
+            - k8s_describe_resource
+            - k8s_get_resource_yaml
+            - k8s_get_pod_logs
+            - k8s_get_events
+            - k8s_patch_resource
+          requireApproval:
+            - k8s_patch_resource
+    context:
+      compaction:
+        compactionInterval: 5
+        overlapSize: 2
+    memory:
+      modelConfig: embeddings
+      ttlDays: 15
+    deployment:
+      serviceAccountName: petstore-ops

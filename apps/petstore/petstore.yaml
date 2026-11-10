@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: petstore
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petstore-api
+  namespace: petstore
+  labels:
+    app: petstore-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: petstore-api
+  template:
+    metadata:
+      labels:
+        app: petstore-api
+    spec:
+      containers:
+        - name: petstore-api
+          image: swaggerapi/petstore3:1.0.29
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /api/v3/store/inventory
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: petstore-api
+  namespace: petstore
+spec:
+  selector:
+    app: petstore-api
+  ports:
+    - port: 8080
+      targetPort: 8080

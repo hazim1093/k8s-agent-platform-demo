@@ -1,0 +1,9 @@
+otel:
+  tracing:
+    enabled: true
+    exporter:
+      otlp:
+        endpoint: http://otel-collector.observability.svc.cluster.local:4317
+        protocol: grpc
+        timeout: 15000
+        insecure: true

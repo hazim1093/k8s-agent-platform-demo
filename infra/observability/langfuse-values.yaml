@@ -1,0 +1,76 @@
+langfuse:
+  image:
+    pullPolicy: IfNotPresent
+  features:
+    telemetryEnabled: false
+  salt:
+    secretKeyRef: {name: langfuse-secrets, key: salt}
+  encryptionKey:
+    secretKeyRef: {name: langfuse-secrets, key: encryption-key}
+  nextauth:
+    url: http://langfuse.localhost:8080
+    secret:
+      secretKeyRef: {name: langfuse-secrets, key: nextauth-secret}
+  additionalEnv:
+    - {name: NODE_OPTIONS, value: --max-old-space-size=1536}
+    - {name: LANGFUSE_INIT_ORG_ID, value: demo-org}
+    - {name: LANGFUSE_INIT_ORG_NAME, value: Demo}
+    - {name: LANGFUSE_INIT_PROJECT_ID, value: demo-project}
+    - {name: LANGFUSE_INIT_PROJECT_NAME, value: agent-platform}
+    - {name: LANGFUSE_INIT_USER_NAME, value: admin}
+    - {name: LANGFUSE_INIT_USER_EMAIL, value: admin@example.com}
+    - name: LANGFUSE_INIT_USER_PASSWORD
+      valueFrom: {secretKeyRef: {name: langfuse-secrets, key: admin-password}}
+    - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+      valueFrom: {secretKeyRef: {name: langfuse-secrets, key: public-key}}
+    - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+      valueFrom: {secretKeyRef: {name: langfuse-secrets, key: secret-key}}
+  web:
+    pdb: {create: false}
+    resources:
+      requests: {cpu: 100m, memory: 512Mi}
+      limits: {memory: 2Gi}
+  worker:
+    pdb: {create: false}
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits: {memory: 2Gi}
+postgresql:
+  auth:
+    existingSecret: langfuse-secrets
+    secretKeys: {userPasswordKey: postgres-password, adminPasswordKey: postgres-password}
+  primary:
+    persistence: {size: 2Gi}
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+      limits: {memory: 512Mi}
+redis:
+  auth:
+    existingSecret: langfuse-secrets
+    existingSecretPasswordKey: redis-password
+  primary:
+    persistence: {size: 1Gi}
+    resources:
+      requests: {cpu: 25m, memory: 64Mi}
+      limits: {memory: 256Mi}
+clickhouse:
+  auth:
+    existingSecret: langfuse-secrets
+    existingSecretKey: clickhouse-password
+  shards: 1
+  replicaCount: 1
+  clusterEnabled: false
+  zookeeper: {enabled: false}
+  persistence: {size: 5Gi}
+  resources:
+    requests: {cpu: 200m, memory: 512Mi}
+    limits: {memory: 1536Mi}
+s3:
+  auth:
+    existingSecret: langfuse-secrets
+    rootUserSecretKey: minio-user
+    rootPasswordSecretKey: minio-password
+  persistence: {size: 2Gi}
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}

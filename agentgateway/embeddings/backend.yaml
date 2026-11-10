@@ -1,0 +1,18 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: embeddings
+  namespace: agentgateway-system
+spec:
+  ai:
+    provider:
+      host: openrouter.ai
+      port: 443
+      pathPrefix: /api/v1
+      openai:
+        model: perplexity/pplx-embed-v1-0.6b
+  policies:
+    auth:
+      secretRef:
+        name: openrouter
+    tls: {}

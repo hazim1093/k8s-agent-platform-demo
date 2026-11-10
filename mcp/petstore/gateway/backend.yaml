@@ -1,0 +1,14 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: petstore-mcp
+  namespace: agentgateway-system
+spec:
+  mcp:
+    prefixMode: Never
+    targets:
+    - name: petstore
+      selector:
+        namespaces:
+          matchLabels:
+            kubernetes.io/metadata.name: petstore

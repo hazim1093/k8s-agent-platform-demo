@@ -1,0 +1,18 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: llm
+  namespace: agentgateway-system
+spec:
+  ai:
+    provider:
+      host: openrouter.ai
+      port: 443
+      pathPrefix: /api/v1
+      openai:
+        model: deepseek/deepseek-v4.1-flash-1017
+  policies:
+    auth:
+      secretRef:
+        name: openrouter
+    tls: {}

@@ -1,0 +1,92 @@
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayBackend
+metadata:
+  name: petstore-mcp-user
+  namespace: agentgateway-system
+spec:
+  mcp:
+    prefixMode: Never
+    targets:
+    - name: petstore
+      selector:
+        namespaces:
+          matchLabels:
+            kubernetes.io/metadata.name: petstore
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: petstore-mcp-user
+  namespace: agentgateway-system
+spec:
+  parentRefs:
+  - name: ai-gateway
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /mcp/petstore-user
+    backendRefs:
+    - group: agentgateway.dev
+      kind: AgentgatewayBackend
+      name: petstore-mcp-user
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: petstore-mcp-user-agent-apikey
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: petstore-mcp-user
+  traffic:
+    apiKeyAuthentication:
+      mode: Strict
+      secretRef:
+        name: petstore-mcp-keys
+      location:
+        header:
+          name: X-Agent-Authorization
+          prefix: "Bearer "
+    transformation:
+      request:
+        set:
+        - name: x-agent-actor
+          value: apiKey.agent
+---
+apiVersion: agentgateway.dev/v1alpha1
+kind: AgentgatewayPolicy
+metadata:
+  name: petstore-mcp-user-token-exchange
+  namespace: agentgateway-system
+spec:
+  targetRefs:
+  - group: agentgateway.dev
+    kind: AgentgatewayBackend
+    name: petstore-mcp-user
+  backend:
+    mcp:
+      authorization:
+        action: Allow
+        policy:
+          matchExpressions:
+          - 'apiKey.agent == "assistant"'
+    auth:
+      oauthTokenExchange:
+        url: http://keycloak.keycloak.svc.cluster.local:8080/realms/petstore/protocol/openid-connect/token
+        grantType: TokenExchange
+        subjectToken:
+          source:
+            header:
+              name: Authorization
+              prefix: "Bearer "
+          tokenType: AccessToken
+        scopes: ["petstore:order"]
+        requestedTokenType: AccessToken
+        clientAuth:
+          clientId: petstore-tools
+          method: ClientSecretBasic
+          secretRef:
+            name: petstore-tools-client

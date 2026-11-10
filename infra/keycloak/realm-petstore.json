@@ -1,0 +1,72 @@
+{
+  "realm": "petstore",
+  "enabled": true,
+  "accessTokenLifespan": 300,
+  "attributes": { "CreateDefaultClientScopes": "true" },
+  "clientScopes": [
+    {
+      "name": "petstore:order",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "petstore-frontend",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:*"],
+      "webOrigins": ["+"],
+      "defaultClientScopes": ["basic", "profile", "email", "roles", "web-origins", "acr"],
+      "protocolMappers": [
+        {
+          "name": "aud-petstore-tools",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.client.audience": "petstore-tools", "access.token.claim": "true", "id.token.claim": "false" }
+        }
+      ]
+    },
+    {
+      "clientId": "petstore-tools",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "demo-tools-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "attributes": { "standard.token.exchange.enabled": "true" },
+      "defaultClientScopes": ["basic", "profile", "roles", "acr"],
+      "optionalClientScopes": ["petstore:order"],
+      "protocolMappers": [
+        {
+          "name": "aud-petstore-tools",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.client.audience": "petstore-tools", "access.token.claim": "true", "id.token.claim": "false" }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@example.com",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Demo",
+      "credentials": [{ "type": "password", "value": "alice", "temporary": false }]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@example.com",
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Demo",
+      "credentials": [{ "type": "password", "value": "bob", "temporary": false }]
+    }
+  ]
+}

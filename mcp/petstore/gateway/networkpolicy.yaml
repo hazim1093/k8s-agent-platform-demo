@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: petstore-mcp-from-gateway
+  namespace: petstore
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: petstore-mcp
+  policyTypes: [Ingress]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: agentgateway-system
+      podSelector:
+        matchLabels:
+          gateway.networking.k8s.io/gateway-name: ai-gateway
+    ports:
+    - protocol: TCP
+      port: 3000

@@ -1,0 +1,81 @@
+fullnameOverride: otel-collector
+mode: deployment
+replicaCount: 1
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.163.2"
+command:
+  name: otelcol-contrib
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+ports:
+  jaeger-compact:
+    enabled: false
+  jaeger-thrift:
+    enabled: false
+  jaeger-grpc:
+    enabled: false
+  zipkin:
+    enabled: false
+extraEnvs:
+  - name: LANGFUSE_AUTH
+    valueFrom:
+      secretKeyRef:
+        name: langfuse-secrets
+        key: otel-authorization
+config:
+  receivers:
+    jaeger: null
+    zipkin: null
+    prometheus: null
+    otlp:
+      protocols:
+        grpc:
+          endpoint: ${env:MY_POD_IP}:4317
+        http:
+          endpoint: ${env:MY_POD_IP}:4318
+  processors:
+    memory_limiter:
+      check_interval: 5s
+      limit_percentage: 80
+      spike_limit_percentage: 25
+    filter/keep-relevant:
+      error_mode: ignore
+      trace_conditions:
+        - >-
+          not (span.attributes["gen_ai.operation.name"] != nil
+          or span.attributes["gen_ai.system"] != nil
+          or span.attributes["gen_ai.provider.name"] != nil
+          or span.attributes["gen_ai.tool.name"] != nil
+          or span.attributes["mcp.method.name"] != nil
+          or span.attributes["mcp.tool.name"] != nil
+          or span.status.code == STATUS_CODE_ERROR
+          or IsRootSpan()
+          or IsMatch(span.name, "^(invoke_agent|execute_tool|chat|tools/|mcp|gen_ai)"))
+    transform/redaction:
+      error_mode: ignore
+      trace_statements:
+        - replace_all_patterns(span.attributes, "value", "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", "[EMAIL]")
+        - replace_all_patterns(span.attributes, "value", "\\b(?:\\d[ -]?){13,19}\\b", "[CARD]")
+        - replace_all_patterns(span.attributes, "value", "\\+?\\d[\\d ().-]{7,}\\d", "[PHONE]")
+    batch:
+      send_batch_size: 512
+      timeout: 5s
+  exporters:
+    debug: null
+    otlphttp/langfuse:
+      endpoint: http://langfuse-web.observability.svc.cluster.local:3000/api/public/otel
+      headers:
+        Authorization: ${env:LANGFUSE_AUTH}
+  service:
+    pipelines:
+      logs: null
+      metrics: null
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, filter/keep-relevant, transform/redaction, batch]
+        exporters: [otlphttp/langfuse]

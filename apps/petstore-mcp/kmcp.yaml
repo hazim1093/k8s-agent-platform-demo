@@ -1,0 +1,4 @@
+name: petstore-mcp
+framework: fastmcp-python
+version: 0.1.0
+description: Task-shaped MCP tools for the Petstore API

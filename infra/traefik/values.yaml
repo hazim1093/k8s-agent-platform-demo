@@ -1,0 +1,20 @@
+providers:
+  kubernetesGateway:
+    enabled: true
+  kubernetesIngress:
+    enabled: false
+gateway:
+  name: web
+  listeners:
+    web:
+      namespacePolicy:
+        from: All
+service:
+  spec:
+    type: NodePort
+ports:
+  web:
+    nodePort: 30080
+  websecure:
+    expose:
+      default: false

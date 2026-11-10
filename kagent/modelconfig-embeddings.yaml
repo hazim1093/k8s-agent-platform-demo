@@ -1,0 +1,12 @@
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: embeddings
+  namespace: kagent
+spec:
+  provider: OpenAI
+  model: default
+  apiKeySecret: kagent-gateway-dummy-key
+  apiKeySecretKey: OPENAI_API_KEY
+  openAI:
+    baseUrl: http://ai-gateway.agentgateway-system.svc.cluster.local:8080/embeddings/v1
